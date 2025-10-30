@@ -24,8 +24,37 @@ const CONFIG = {
   productVersion: "1.0",
 };
 
-// HTML template for responsive Unity build
-const HTML_TEMPLATE = `<!DOCTYPE html>
+/**
+ * Detect file extensions for Unity build files
+ * Returns object with file extensions (empty string or '.br')
+ */
+function detectFileExtensions(buildPath) {
+  const baseName = CONFIG.productName;
+  const buildDir = path.join(buildPath, "Build");
+
+  const extensions = {
+    data: "",
+    framework: "",
+    wasm: "",
+  };
+
+  // Check if .br versions exist
+  const dataBrPath = path.join(buildDir, `${baseName}.data.br`);
+  const frameworkBrPath = path.join(buildDir, `${baseName}.framework.js.br`);
+  const wasmBrPath = path.join(buildDir, `${baseName}.wasm.br`);
+
+  if (fs.existsSync(dataBrPath)) extensions.data = ".br";
+  if (fs.existsSync(frameworkBrPath)) extensions.framework = ".br";
+  if (fs.existsSync(wasmBrPath)) extensions.wasm = ".br";
+
+  return extensions;
+}
+
+/**
+ * Generate HTML template with correct file extensions
+ */
+function generateHTMLTemplate(fileExtensions) {
+  return `<!DOCTYPE html>
 <html lang="en-us">
   <head>
     <meta charset="utf-8" />
@@ -35,7 +64,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
       content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes"
     />
     <title>${CONFIG.gameTitle}</title>
-    <link rel="shortcut icon" href="TemplateData/favicon.ico" />
+    <link rel="shortcut icon" href="TemplateData/travesia_logo.jpg" />
     <link rel="stylesheet" href="TemplateData/style.css" />
   </head>
   <body>
@@ -86,12 +115,14 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
       }
 
       var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/Travesia_Web.loader.js";
+      var loaderUrl = buildUrl + "/${CONFIG.productName}.loader.js";
       var config = {
         arguments: [],
-        dataUrl: buildUrl + "/Travesia_Web.data",
-        frameworkUrl: buildUrl + "/Travesia_Web.framework.js",
-        codeUrl: buildUrl + "/Travesia_Web.wasm",
+        dataUrl: buildUrl + "/${CONFIG.productName}.data${fileExtensions.data}",
+        frameworkUrl: buildUrl + "/${CONFIG.productName}.framework.js${
+    fileExtensions.framework
+  }",
+        codeUrl: buildUrl + "/${CONFIG.productName}.wasm${fileExtensions.wasm}",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "${CONFIG.companyName}",
         productName: "${CONFIG.productName}",
@@ -135,13 +166,13 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         const viewportHeight = window.innerHeight;
 
         // Calculate aspect ratio (${CONFIG.targetResolution.width}:${
-  CONFIG.targetResolution.height
-} = ${(CONFIG.targetResolution.width / CONFIG.targetResolution.height).toFixed(
-  3
-)})
+    CONFIG.targetResolution.height
+  } = ${(
+    CONFIG.targetResolution.width / CONFIG.targetResolution.height
+  ).toFixed(3)})
         const targetAspectRatio = ${CONFIG.targetResolution.width} / ${
-  CONFIG.targetResolution.height
-};
+    CONFIG.targetResolution.height
+  };
         const viewportAspectRatio = viewportWidth / viewportHeight;
 
         let canvasWidth, canvasHeight;
@@ -193,6 +224,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
     </script>
   </body>
 </html>`;
+}
 
 // CSS template for responsive styling
 const CSS_TEMPLATE = `body {
@@ -274,14 +306,21 @@ function processUnityBuild(buildPath) {
     process.exit(1);
   }
 
+  // Detect file extensions
+  console.log("🔍 Detecting file extensions...");
+  const fileExtensions = detectFileExtensions(buildPath);
+  console.log(
+    `✅ Detected extensions: data${fileExtensions.data}, framework${fileExtensions.framework}, wasm${fileExtensions.wasm}`
+  );
+
   // Check for required files
+  const baseName = CONFIG.productName;
+  const buildDir = path.join(buildPath, "Build");
+
   const requiredFiles = [
     "index.html",
     "TemplateData/style.css",
-    "Build/Travesia_Web.loader.js",
-    "Build/Travesia_Web.data",
-    "Build/Travesia_Web.framework.js",
-    "Build/Travesia_Web.wasm",
+    `Build/${baseName}.loader.js`,
   ];
 
   console.log("📋 Checking required files...");
@@ -291,6 +330,39 @@ function processUnityBuild(buildPath) {
       console.error(`❌ Error: Required file ${file} not found`);
       process.exit(1);
     }
+  }
+
+  // Check Unity build files
+  const dataFile = path.join(
+    buildDir,
+    `${baseName}.data${fileExtensions.data}`
+  );
+  const frameworkFile = path.join(
+    buildDir,
+    `${baseName}.framework.js${fileExtensions.framework}`
+  );
+  const wasmFile = path.join(
+    buildDir,
+    `${baseName}.wasm${fileExtensions.wasm}`
+  );
+
+  if (!fs.existsSync(dataFile)) {
+    console.error(
+      `❌ Error: Required file Build/${baseName}.data${fileExtensions.data} not found`
+    );
+    process.exit(1);
+  }
+  if (!fs.existsSync(frameworkFile)) {
+    console.error(
+      `❌ Error: Required file Build/${baseName}.framework.js${fileExtensions.framework} not found`
+    );
+    process.exit(1);
+  }
+  if (!fs.existsSync(wasmFile)) {
+    console.error(
+      `❌ Error: Required file Build/${baseName}.wasm${fileExtensions.wasm} not found`
+    );
+    process.exit(1);
   }
   console.log("✅ All required files found");
 
@@ -314,8 +386,11 @@ function processUnityBuild(buildPath) {
   // Write new responsive files
   console.log("📝 Writing responsive files...");
 
+  // Generate HTML with correct file extensions
+  const htmlContent = generateHTMLTemplate(fileExtensions);
+
   // Write HTML file
-  fs.writeFileSync(path.join(buildPath, "index.html"), HTML_TEMPLATE);
+  fs.writeFileSync(path.join(buildPath, "index.html"), htmlContent);
   console.log("✅ index.html updated");
 
   // Write CSS file
@@ -359,14 +434,15 @@ Features:
   ✅ Automatic canvas centering
   ✅ Creates backups of original files
   ✅ White background for better contrast
+  ✅ Automatic detection of .br compressed files
 
 Required files in build directory:
   - index.html
   - TemplateData/style.css
-  - Build/Travesia_Web.loader.js
-  - Build/Travesia_Web.data
-  - Build/Travesia_Web.framework.js
-  - Build/Travesia_Web.wasm
+  - Build/La_Gran_Travesia_Constitucional.loader.js
+  - Build/La_Gran_Travesia_Constitucional.data (or .data.br)
+  - Build/La_Gran_Travesia_Constitucional.framework.js (or .framework.js.br)
+  - Build/La_Gran_Travesia_Constitucional.wasm (or .wasm.br)
 `);
 }
 
