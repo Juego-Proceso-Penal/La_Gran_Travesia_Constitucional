@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>La Gran Travesía Constitucional</title>
+    <title>La Gran Travesia Constitucional</title>
     <link rel="shortcut icon" href="TemplateData/travesia_logo.jpg" />
     <link rel="stylesheet" href="TemplateData/style.css" />
   </head>
@@ -20,7 +20,7 @@
       <div id="unity-footer">
         <div id="unity-logo-title-footer"></div>
         <div id="unity-fullscreen-button"></div>
-        <div id="unity-build-title">La_Gran_Travesia_Constitucional</div>
+        <div id="unity-build-title">La Gran Travesia Constitucional</div>
       </div>
     </div>
     <script>
@@ -64,7 +64,7 @@
         codeUrl: buildUrl + "/La_Gran_Travesia_Constitucional.wasm.br",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "NolimStudios",
-        productName: "La_Gran_Travesia_Constitucional",
+        productName: "La Gran Travesia Constitucional",
         productVersion: "1.0.0",
         showBanner: unityShowBanner,
         // errorHandler: function(err, url, line) {

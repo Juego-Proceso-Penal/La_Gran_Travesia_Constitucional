@@ -2,6 +2,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { execSync } = require("child_process");
 
 /**
  * Unity Web Build Responsive Converter
@@ -51,7 +52,81 @@ function detectFileExtensions(buildPath) {
 }
 
 /**
+ * Decompress .br files if they exist and uncompressed versions don't exist
+ * Returns true if decompression was attempted/needed, false otherwise
+ */
+function decompressBrFiles(buildPath) {
+  const baseName = CONFIG.productName;
+  const buildDir = path.join(buildPath, "Build");
+
+  const brFiles = [
+    {
+      br: `${baseName}.data.br`,
+      uncompressed: `${baseName}.data`,
+    },
+    {
+      br: `${baseName}.framework.js.br`,
+      uncompressed: `${baseName}.framework.js`,
+    },
+    {
+      br: `${baseName}.wasm.br`,
+      uncompressed: `${baseName}.wasm`,
+    },
+  ];
+
+  let decompressedCount = 0;
+  let skippedCount = 0;
+
+  // Check if brotli command is available
+  let brotliAvailable = false;
+  try {
+    execSync("which brotli", { stdio: "ignore" });
+    brotliAvailable = true;
+  } catch (e) {
+    console.log(
+      "⚠️  Warning: 'brotli' command not found. Skipping decompression."
+    );
+    console.log("   Install it with: brew install brotli");
+    return false;
+  }
+
+  console.log("🔓 Checking for compressed files...");
+
+  for (const file of brFiles) {
+    const brPath = path.join(buildDir, file.br);
+    const uncompressedPath = path.join(buildDir, file.uncompressed);
+
+    // If .br file exists and uncompressed version doesn't exist
+    if (fs.existsSync(brPath) && !fs.existsSync(uncompressedPath)) {
+      try {
+        console.log(`   Decompressing ${file.br}...`);
+        execSync(`brotli -d "${brPath}"`, { stdio: "inherit" });
+        decompressedCount++;
+      } catch (error) {
+        console.error(`   ❌ Failed to decompress ${file.br}:`, error.message);
+      }
+    } else if (fs.existsSync(brPath) && fs.existsSync(uncompressedPath)) {
+      skippedCount++;
+      console.log(
+        `   ⏭️  ${file.uncompressed} already exists, skipping ${file.br}`
+      );
+    }
+  }
+
+  if (decompressedCount > 0) {
+    console.log(`✅ Decompressed ${decompressedCount} file(s)`);
+  } else if (skippedCount > 0) {
+    console.log(`ℹ️  All files already decompressed (${skippedCount} skipped)`);
+  } else {
+    console.log("ℹ️  No .br files found or already decompressed");
+  }
+
+  return decompressedCount > 0;
+}
+
+/**
  * Generate HTML template with correct file extensions
+ * Note: After decompression, this will always use uncompressed files (empty extensions)
  */
 function generateHTMLTemplate(fileExtensions) {
   return `<!DOCTYPE html>
@@ -63,7 +138,7 @@ function generateHTMLTemplate(fileExtensions) {
       name="viewport"
       content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes"
     />
-    <title>${CONFIG.gameTitle}</title>
+     <title>La Gran Travesia Constitucional</title>
     <link rel="shortcut icon" href="TemplateData/travesia_logo.jpg" />
     <link rel="stylesheet" href="TemplateData/style.css" />
   </head>
@@ -306,16 +381,30 @@ function processUnityBuild(buildPath) {
     process.exit(1);
   }
 
-  // Detect file extensions
+  // Decompress .br files first (if they exist)
+  decompressBrFiles(buildPath);
+
+  // Detect file extensions (prefer uncompressed files if they exist)
   console.log("🔍 Detecting file extensions...");
   const fileExtensions = detectFileExtensions(buildPath);
   console.log(
     `✅ Detected extensions: data${fileExtensions.data}, framework${fileExtensions.framework}, wasm${fileExtensions.wasm}`
   );
 
-  // Check for required files
+  // If files were decompressed, force use of uncompressed versions
   const baseName = CONFIG.productName;
   const buildDir = path.join(buildPath, "Build");
+
+  // Check if uncompressed versions exist and prefer them
+  const uncompressedData = path.join(buildDir, `${baseName}.data`);
+  const uncompressedFramework = path.join(buildDir, `${baseName}.framework.js`);
+  const uncompressedWasm = path.join(buildDir, `${baseName}.wasm`);
+
+  if (fs.existsSync(uncompressedData)) fileExtensions.data = "";
+  if (fs.existsSync(uncompressedFramework)) fileExtensions.framework = "";
+  if (fs.existsSync(uncompressedWasm)) fileExtensions.wasm = "";
+
+  // Check for required files
 
   const requiredFiles = [
     "index.html",
@@ -435,6 +524,7 @@ Features:
   ✅ Creates backups of original files
   ✅ White background for better contrast
   ✅ Automatic detection of .br compressed files
+  ✅ Automatic decompression of .br files (requires 'brotli' command)
 
 Required files in build directory:
   - index.html
