@@ -151,15 +151,30 @@ function generateHTMLTemplate(fileExtensions) {
         tabindex="-1"
       ></canvas>
       <div id="unity-loading-bar">
-        <div id="unity-logo"></div>
-        <div id="unity-progress-bar-empty">
-          <div id="unity-progress-bar-full"></div>
+        <div class="loader-card">
+          <div class="loader-brand">
+            <div id="unity-logo"></div>
+            <div id="nolim-studios-logo"></div>
+          </div>
+          <div class="loader-text">Iniciando la travesía...</div>
+          <div class="loader-progress">
+            <div id="unity-progress-bar-full"></div>
+          </div>
+          <div class="loader-meta">
+            <div class="loader-spinner"></div>
+            <div id="unity-loading-percentage">0%</div>
+          </div>
         </div>
       </div>
       <div id="unity-warning"></div>
     </div>
     <script>
       var canvas = document.querySelector("#unity-canvas");
+      var loadingBar = document.querySelector("#unity-loading-bar");
+      var progressBarFull = document.querySelector("#unity-progress-bar-full");
+      var loadingPercentage = document.querySelector(
+        "#unity-loading-percentage"
+      );
 
       // Shows a temporary message banner/ribbon for a few seconds, or
       // a permanent error message on top of the canvas if type=='error'.
@@ -278,17 +293,21 @@ function generateHTMLTemplate(fileExtensions) {
       // Resize on window resize
       window.addEventListener("resize", resizeCanvas);
 
-      document.querySelector("#unity-loading-bar").style.display = "block";
+      loadingBar.style.display = "flex";
 
       var script = document.createElement("script");
       script.src = loaderUrl;
       script.onload = () => {
         createUnityInstance(canvas, config, (progress) => {
-          document.querySelector("#unity-progress-bar-full").style.width =
-            100 * progress + "%";
+          if (progressBarFull) {
+            progressBarFull.style.width = 100 * progress + "%";
+          }
+          if (loadingPercentage) {
+            loadingPercentage.textContent = Math.round(progress * 100) + "%";
+          }
         })
           .then((unityInstance) => {
-            document.querySelector("#unity-loading-bar").style.display = "none";
+            loadingBar.style.display = "none";
           })
           .catch((message) => {
             alert(message);
@@ -327,33 +346,104 @@ const CSS_TEMPLATE = `body {
 
 #unity-loading-bar {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  inset: 0;
   display: none;
   z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+}
+
+.loader-card {
+  width: min(320px, 90vw);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  border-radius: 16px;
+  background: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.95),
+    rgba(234, 240, 255, 0.95)
+  );
+  box-shadow: 0 18px 45px rgba(15, 22, 54, 0.18);
+}
+
+.loader-brand {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+#unity-logo,
+#nolim-studios-logo {
+  flex: 1;
+  height: 96px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 #unity-logo {
-  width: 154px;
-  height: 130px;
-  background: url("unity-logo-light.png") no-repeat center;
-  margin: 0 auto;
+  background-image: url("travesia_logo.jpg");
 }
 
-#unity-progress-bar-empty {
-  width: 141px;
-  height: 18px;
-  margin-top: 10px;
-  margin-left: 6.5px;
-  background: url("progress-bar-empty-light.png") no-repeat center;
+#nolim-studios-logo {
+  background-image: url("nolim_studios_logo.png");
+}
+
+.loader-text {
+  font-family: "Segoe UI", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e2a4a;
+  text-align: center;
+}
+
+.loader-progress {
+  position: relative;
+  width: 100%;
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(30, 42, 74, 0.12);
+  overflow: hidden;
 }
 
 #unity-progress-bar-full {
-  width: 0%;
-  height: 18px;
-  margin-top: 10px;
-  background: url("progress-bar-full-light.png") no-repeat center;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #4b8fea 0%, #52d4ff 50%, #65ffbf 100%);
+  transition: width 0.2s ease;
+}
+
+.loader-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-family: "Segoe UI", sans-serif;
+  color: #1e2a4a;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.loader-spinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 3px solid rgba(75, 143, 234, 0.2);
+  border-top-color: #4b8fea;
+  animation: spinner-rotate 1s linear infinite;
+}
+
+@keyframes spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 #unity-warning {
