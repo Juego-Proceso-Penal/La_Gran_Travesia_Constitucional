@@ -138,8 +138,12 @@ function generateHTMLTemplate(fileExtensions) {
       name="viewport"
       content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes"
     />
-     <title>La Gran Travesia Constitucional</title>
+    <meta name="author" content="NolimStudios" />
+    <meta name="description" content="La Gran Travesía Constitucional" />
+    <meta name="keywords" content="La Gran Travesía Constitucional, " />
+    <title>La Gran Travesía Constitucional</title>
     <link rel="shortcut icon" href="TemplateData/travesia_logo.jpg" />
+    <link rel="stylesheet" href="TemplateData/style.css" />
     <link rel="stylesheet" href="TemplateData/style.css" />
   </head>
   <body>

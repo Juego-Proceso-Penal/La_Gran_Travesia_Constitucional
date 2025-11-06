@@ -1,45 +1,185 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Unity Web Player | La Gran Travesia Constitucional</title>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes"
+    />
+    <meta name="author" content="NolimStudios" />
+    <meta name="description" content="La Gran Travesía Constitucional" />
+    <meta name="keywords" content="La Gran Travesía Constitucional, " />
+    <title>La Gran Travesía Constitucional</title>
+    <link rel="shortcut icon" href="TemplateData/travesia_logo.jpg" />
+    <link rel="stylesheet" href="TemplateData/style.css" />
   </head>
-  <body style="text-align: center; padding: 0; border: 0; margin: 0;">
-    <canvas id="unity-canvas" width=960 height=600 tabindex="-1" style="width: 960px; height: 600px; background: url('Build/La_Gran_Travesia_Constitucional.jpg') center / cover"></canvas>
-    <script src="Build/La_Gran_Travesia_Constitucional.loader.js"></script>
+  <body>
+    <div id="unity-container" class="unity-mobile">
+      <canvas
+        id="unity-canvas"
+        width="1080"
+        height="2400"
+        tabindex="-1"
+      ></canvas>
+      <div id="unity-loading-bar">
+        <div class="loader-card">
+          <div class="loader-brand">
+            <div id="unity-logo"></div>
+            <div id="nolim-studios-logo"></div>
+          </div>
+          <div class="loader-text">Iniciando la travesía...</div>
+          <div class="loader-progress">
+            <div id="unity-progress-bar-full"></div>
+          </div>
+          <div class="loader-meta">
+            <div class="loader-spinner"></div>
+            <div id="unity-loading-percentage">0%</div>
+          </div>
+        </div>
+      </div>
+      <div id="unity-warning"></div>
+    </div>
     <script>
-      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        // Mobile device style: fill the whole browser client area with the game canvas:
-        var meta = document.createElement('meta');
-        meta.name = 'viewport';
-        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
-        document.getElementsByTagName('head')[0].appendChild(meta);
+      var canvas = document.querySelector("#unity-canvas");
+      var loadingBar = document.querySelector("#unity-loading-bar");
+      var progressBarFull = document.querySelector("#unity-progress-bar-full");
+      var loadingPercentage = document.querySelector(
+        "#unity-loading-percentage"
+      );
 
-        var canvas = document.querySelector("#unity-canvas");
-        canvas.style.width = "100%";
-        canvas.style.height = "100%";
-        canvas.style.position = "fixed";
-
-        document.body.style.textAlign = "left";
-
+      // Shows a temporary message banner/ribbon for a few seconds, or
+      // a permanent error message on top of the canvas if type=='error'.
+      // If type=='warning', a yellow highlight color is used.
+      // Modify or remove this function to customize the visually presented
+      // way that non-critical warnings and error messages are presented to the
+      // user.
+      function unityShowBanner(msg, type) {
+        var warningBanner = document.querySelector("#unity-warning");
+        function updateBannerVisibility() {
+          warningBanner.style.display = warningBanner.children.length
+            ? "block"
+            : "none";
+        }
+        var div = document.createElement("div");
+        div.innerHTML = msg;
+        warningBanner.appendChild(div);
+        if (type == "error") div.style = "background: red; padding: 10px;";
+        else {
+          if (type == "warning")
+            div.style = "background: yellow; padding: 10px;";
+          setTimeout(function () {
+            warningBanner.removeChild(div);
+            updateBannerVisibility();
+          }, 5000);
+        }
+        updateBannerVisibility();
       }
 
-      createUnityInstance(document.querySelector("#unity-canvas"), {
+      var buildUrl = "Build";
+      var loaderUrl = buildUrl + "/La_Gran_Travesia_Constitucional.loader.js";
+      var config = {
         arguments: [],
-        dataUrl: "Build/La_Gran_Travesia_Constitucional.data.gz",
-        frameworkUrl: "Build/La_Gran_Travesia_Constitucional.framework.js.gz",
-        codeUrl: "Build/La_Gran_Travesia_Constitucional.wasm.gz",
+        dataUrl: buildUrl + "/La_Gran_Travesia_Constitucional.data",
+        frameworkUrl:
+          buildUrl + "/La_Gran_Travesia_Constitucional.framework.js",
+        codeUrl: buildUrl + "/La_Gran_Travesia_Constitucional.wasm",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "NolimStudios",
-        productName: "La Gran Travesia Constitucional",
-        productVersion: "1.0.0",
-        // matchWebGLToCanvasSize: false, // Uncomment this to separately control WebGL canvas render size and DOM element size.
-        // devicePixelRatio: 1, // Uncomment this to override low DPI rendering on high DPI displays.
-      }).then((unityInstance) => {
-      }).catch((message) => {
-        alert(message);
-      });
+        productName: "La_Gran_Travesia_Constitucional",
+        productVersion: "1.0",
+        showBanner: unityShowBanner,
+        // errorHandler: function(err, url, line) {
+        //    alert("error " + err + " occurred at line " + line);
+        //    // Return 'true' if you handled this error and don't want Unity
+        //    // to process it further, 'false' otherwise.
+        //    return true;
+        // },
+      };
+
+      // By default, Unity keeps WebGL canvas render target size matched with
+      // the DOM size of the canvas element (scaled by window.devicePixelRatio)
+      // Set this to false if you want to decouple this synchronization from
+      // happening inside the engine, and you would instead like to size up
+      // the canvas DOM size and WebGL render target sizes yourself.
+      // config.matchWebGLToCanvasSize = false;
+
+      // If you would like all file writes inside Unity Application.persistentDataPath
+      // directory to automatically persist so that the contents are remembered when
+      // the user revisits the site the next time, uncomment the following line:
+      // config.autoSyncPersistentDataPath = true;
+      // This autosyncing is currently not the default behavior to avoid regressing
+      // existing user projects that might rely on the earlier manual
+      // JS_FileSystem_Sync() behavior, but in future Unity version, this will be
+      // expected to change.
+
+      // Force mobile style for all devices since this is portrait-only
+      document.querySelector("#unity-container").className = "unity-mobile";
+      canvas.className = "unity-mobile";
+
+      // Responsive scaling function
+      function resizeCanvas() {
+        const container = document.querySelector("#unity-container");
+        const canvas = document.querySelector("#unity-canvas");
+
+        // Get viewport dimensions
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        // Calculate aspect ratio (1080:2400 = 0.450)
+        const targetAspectRatio = 1080 / 2400;
+        const viewportAspectRatio = viewportWidth / viewportHeight;
+
+        let canvasWidth, canvasHeight;
+
+        if (viewportAspectRatio > targetAspectRatio) {
+          // Viewport is wider than target, fit to height
+          canvasHeight = viewportHeight;
+          canvasWidth = canvasHeight * targetAspectRatio;
+        } else {
+          // Viewport is taller than target, fit to width
+          canvasWidth = viewportWidth;
+          canvasHeight = canvasWidth / targetAspectRatio;
+        }
+
+        // Apply dimensions
+        canvas.style.width = canvasWidth + "px";
+        canvas.style.height = canvasHeight + "px";
+
+        // Center the canvas
+        container.style.left = "50%";
+        container.style.top = "50%";
+        container.style.transform = "translate(-50%, -50%)";
+      }
+
+      // Initial resize
+      resizeCanvas();
+
+      // Resize on window resize
+      window.addEventListener("resize", resizeCanvas);
+
+      loadingBar.style.display = "flex";
+
+      var script = document.createElement("script");
+      script.src = loaderUrl;
+      script.onload = () => {
+        createUnityInstance(canvas, config, (progress) => {
+          if (progressBarFull) {
+            progressBarFull.style.width = 100 * progress + "%";
+          }
+          if (loadingPercentage) {
+            loadingPercentage.textContent = Math.round(progress * 100) + "%";
+          }
+        })
+          .then((unityInstance) => {
+            loadingBar.style.display = "none";
+          })
+          .catch((message) => {
+            alert(message);
+          });
+      };
+
+      document.body.appendChild(script);
     </script>
   </body>
 </html>
